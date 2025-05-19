@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Générateur de Logo Bulles</title>
+  <title>Générateur de Logo Bulles (SVG adaptatif)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -30,25 +30,32 @@
       width: 100%;
     }
     .control-group {
-      width: 200px;
+      width: 220px;
     }
-    svg {
-      display: block;
-      margin: 0 auto;
-      background: white;
-      border: 1px solid #ccc;
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
     }
     button {
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
-      margin: 0 auto;
-      display: block;
+    }
+    #svgContainer {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    svg {
+      border: 1px solid #ccc;
+      background: white;
     }
   </style>
 </head>
 <body>
-  <h1>Générateur de Logo en Bulles (Disque)</h1>
+  <h1>Générateur de Logo en Bulles (Auto-dimensionné)</h1>
 
   <div class="controls">
     <div class="control-group">
@@ -60,8 +67,12 @@
       <input type="number" id="numCircles" value="100" min="1" max="1000">
     </div>
     <div class="control-group">
-      <label for="radius">Rayon du disque (px)</label>
-      <input type="number" id="radius" value="150" min="10" max="250">
+      <label for="radius">Rayon horizontal (px)</label>
+      <input type="number" id="radius" value="150" min="10" max="1000">
+    </div>
+    <div class="control-group">
+      <label for="aspectRatio">Ratio largeur/hauteur</label>
+      <input type="number" id="aspectRatio" value="1" step="0.1" min="0.1" max="5">
     </div>
     <div class="control-group">
       <label for="sizeVariance">Taille max des bulles (px)</label>
@@ -69,39 +80,75 @@
     </div>
   </div>
 
-  <button onclick="generateBubbles()">Générer</button>
+  <div class="buttons">
+    <button onclick="generateBubbles()">Générer</button>
+    <button onclick="downloadSVG()">Télécharger le SVG</button>
+  </div>
 
-  <svg id="logoPreview" width="500" height="500" viewBox="0 0 500 500"></svg>
+  <div id="svgContainer"></div>
 
   <script>
     function generateBubbles() {
-      const svg = document.getElementById("logoPreview");
-      svg.innerHTML = ''; // Clear
-      const centerX = 250, centerY = 250;
-
+      const container = document.getElementById("svgContainer");
+      container.innerHTML = ''; // Reset
       const colors = document.getElementById("colors").value.split(',').map(c => c.trim());
       const numCircles = parseInt(document.getElementById("numCircles").value);
-      const radius = parseInt(document.getElementById("radius").value);
+      const radiusX = parseFloat(document.getElementById("radius").value);
+      const ratio = parseFloat(document.getElementById("aspectRatio").value);
+      const radiusY = radiusX / ratio;
       const sizeVariance = parseInt(document.getElementById("sizeVariance").value);
 
+      const padding = sizeVariance + 10; // Extra space to avoid cutoff
+      const width = 2 * (radiusX + padding);
+      const height = 2 * (radiusY + padding);
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("width", width);
+      svg.setAttribute("height", height);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("id", "logoPreview");
+
       for (let i = 0; i < numCircles; i++) {
-        // Répartition uniforme dans un disque (utilise sqrt pour éviter densité centrale)
         const angle = Math.random() * 2 * Math.PI;
-        const r = Math.sqrt(Math.random()) * radius;
-
-        const cx = centerX + r * Math.cos(angle);
-        const cy = centerY + r * Math.sin(angle);
-
+        const r = Math.sqrt(Math.random());
+        const cx = centerX + r * radiusX * Math.cos(angle);
+        const cy = centerY + r * radiusY * Math.sin(angle);
         const circleSize = Math.random() * sizeVariance + 2;
         const color = colors[Math.floor(Math.random() * colors.length)];
 
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        const circle = document.createElementNS(svgNS, "circle");
         circle.setAttribute("cx", cx);
         circle.setAttribute("cy", cy);
         circle.setAttribute("r", circleSize);
         circle.setAttribute("fill", color);
         svg.appendChild(circle);
       }
+
+      container.appendChild(svg);
+    }
+
+    function downloadSVG() {
+      const svg = document.getElementById("logoPreview");
+      if (!svg) return alert("Aucun SVG généré.");
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+
+      // Ajout du namespace si nécessaire
+      if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+      const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "logo_bulles_adaptatif.svg";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     window.onload = generateBubbles;
