@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Générateur de Logo Bulles</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .controls label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .controls input {
+      padding: 5px;
+      width: 100%;
+    }
+    .control-group {
+      width: 200px;
+    }
+    svg {
+      display: block;
+      margin: 0 auto;
+      background: white;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 0 auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Générateur de Logo en Bulles (Disque)</h1>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="colors">Couleurs (séparées par virgule)</label>
+      <input type="text" id="colors" value="#FFC107,#03A9F4,#E91E63,#9C27B0,#FF5722,#00BCD4,#3F51B5">
+    </div>
+    <div class="control-group">
+      <label for="numCircles">Nombre de bulles</label>
+      <input type="number" id="numCircles" value="100" min="1" max="1000">
+    </div>
+    <div class="control-group">
+      <label for="radius">Rayon du disque (px)</label>
+      <input type="number" id="radius" value="150" min="10" max="250">
+    </div>
+    <div class="control-group">
+      <label for="sizeVariance">Taille max des bulles (px)</label>
+      <input type="number" id="sizeVariance" value="10" min="1" max="30">
+    </div>
+  </div>
+
+  <button onclick="generateBubbles()">Générer</button>
+
+  <svg id="logoPreview" width="500" height="500" viewBox="0 0 500 500"></svg>
+
+  <script>
+    function generateBubbles() {
+      const svg = document.getElementById("logoPreview");
+      svg.innerHTML = ''; // Clear
+      const centerX = 250, centerY = 250;
+
+      const colors = document.getElementById("colors").value.split(',').map(c => c.trim());
+      const numCircles = parseInt(document.getElementById("numCircles").value);
+      const radius = parseInt(document.getElementById("radius").value);
+      const sizeVariance = parseInt(document.getElementById("sizeVariance").value);
+
+      for (let i = 0; i < numCircles; i++) {
+        // Répartition uniforme dans un disque (utilise sqrt pour éviter densité centrale)
+        const angle = Math.random() * 2 * Math.PI;
+        const r = Math.sqrt(Math.random()) * radius;
+
+        const cx = centerX + r * Math.cos(angle);
+        const cy = centerY + r * Math.sin(angle);
+
+        const circleSize = Math.random() * sizeVariance + 2;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", cx);
+        circle.setAttribute("cy", cy);
+        circle.setAttribute("r", circleSize);
+        circle.setAttribute("fill", color);
+        svg.appendChild(circle);
+      }
+    }
+
+    window.onload = generateBubbles;
+  </script>
+</body>
+</html>
